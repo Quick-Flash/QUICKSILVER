@@ -318,19 +318,6 @@ int main(void) {
     perf_counter_start(PERF_COUNTER_BLACKBOX);
     blackbox_update();
     perf_counter_end(PERF_COUNTER_BLACKBOX);
-
-    if (usb_detect()) {
-      flags.usb_active = 1;
-#ifndef ALLOW_USB_ARMING
-      if (rx_aux_on(AUX_ARMING))
-        flags.arm_safety = 1; //final safety check to disallow arming during USB operation
-#endif
-      usb_configurator();
-    } else {
-      flags.usb_active = 0;
-      extern usb_motor_test_t usb_motor_test;
-      usb_motor_test.active = 0;
-    }
 #endif
 
     state.cpu_load = (timer_micros() - lastlooptime);
@@ -338,6 +325,7 @@ int main(void) {
     if (loop_ctr == 255 && state.cpu_load > state.looptime_autodetect + 5) {
       blown_loop_counter++;
       if (blown_loop_counter > 100) {
+        quic_debugf("BLOWN LOOP %d", uint32_t(state.cpu_load));
         blown_loop_counter = 0;
         loop_ctr = 0;
         looptime_warning++;
@@ -378,6 +366,21 @@ int main(void) {
 
     perf_counter_end(PERF_COUNTER_TOTAL);
     perf_counter_update();
+
+#ifdef F4
+    if (usb_detect()) {
+      flags.usb_active = 1;
+#ifndef ALLOW_USB_ARMING
+      if (rx_aux_on(AUX_ARMING))
+        flags.arm_safety = 1; //final safety check to disallow arming during USB operation
+#endif
+      usb_configurator();
+    } else {
+      flags.usb_active = 0;
+      extern usb_motor_test_t usb_motor_test;
+      usb_motor_test.active = 0;
+    }
+#endif
 
     while ((timer_micros() - time) < state.looptime_autodetect)
       __NOP();
