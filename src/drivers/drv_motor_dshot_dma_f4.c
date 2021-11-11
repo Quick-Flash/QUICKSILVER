@@ -34,7 +34,7 @@
 #include "project.h"
 #include "util.h"
 
-#ifdef F4
+#ifdef STM32F4
 typedef struct {
   __IO uint32_t MODER;   /*!< GPIO port mode register,               Address offset: 0x00      */
   __IO uint32_t OTYPER;  /*!< GPIO port output type register,        Address offset: 0x04      */
@@ -373,7 +373,7 @@ void motor_set(uint8_t number, float pwm) {
 
 #endif
   if (flags.on_ground || !flags.arm_state || (flags.motortest_override && pwm < 0.002f) || ((rx_aux_on(AUX_MOTOR_TEST)) && pwm < 0.002f)) { //turn off the slow motors during turtle or motortest
-    value = 0;                                                                                                                                           // stop the motors
+    value = 0;                                                                                                                              // stop the motors
   }
 
   if (flags.failsafe && !flags.motortest_override) {

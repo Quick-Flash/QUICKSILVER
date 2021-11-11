@@ -19,7 +19,7 @@
 #include "util/cbor_helper.h"
 #include "vtx.h"
 
-#if defined(F4)
+#if defined(STM32F4)
 
 #define QUIC_HEADER_LEN 4
 
