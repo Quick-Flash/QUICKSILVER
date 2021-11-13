@@ -54,7 +54,7 @@ int8_t vtx_find_frequency_index(uint16_t frequency) {
 }
 
 uint8_t has_vtx_configured() {
-  return serial_smart_audio_port == profile.serial.smart_audio && serial_smart_audio_port != USART_PORT_INVALID;
+  return serial_smart_audio_port == profile.serial.smart_audio && serial_smart_audio_port != UART_PORT_INVALID;
 }
 
 #ifdef ENABLE_SMART_AUDIO
@@ -335,7 +335,7 @@ void vtx_update() {
     return;
   }
 
-  if (profile.serial.smart_audio == USART_PORT_INVALID || profile.serial.smart_audio == serial_rx_port) {
+  if (profile.serial.smart_audio == UART_PORT_INVALID || profile.serial.smart_audio == serial_rx_port) {
     // no serial assigned to vtx or still in use by rx
     return;
   }

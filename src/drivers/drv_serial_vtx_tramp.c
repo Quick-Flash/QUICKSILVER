@@ -13,7 +13,7 @@
 
 #ifdef ENABLE_TRAMP
 
-#define USART usart_port_defs[serial_smart_audio_port]
+#define USART uart_ports[serial_smart_audio_port - 1]
 
 typedef enum {
   PARSER_IDLE,
@@ -73,7 +73,7 @@ static void serial_tramp_reconfigure() {
   GPIO_InitStructure.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
   GPIO_InitStructure.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStructure.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-  gpio_pin_init_af(&GPIO_InitStructure, USART.tx_pin, USART.gpio_af);
+  gpio_pin_init_af(&GPIO_InitStructure, &USART.tx);
 
   LL_USART_InitTypeDef USART_InitStructure;
   USART_InitStructure.BaudRate = 9600;
@@ -99,9 +99,9 @@ static void serial_tramp_reconfigure() {
 void serial_tramp_init() {
   serial_smart_audio_port = profile.serial.smart_audio;
 
-  serial_enable_rcc(serial_smart_audio_port);
+  serial_enable_rcc(&USART);
   serial_tramp_reconfigure();
-  serial_enable_isr(serial_smart_audio_port);
+  serial_enable_isr(&USART);
 }
 
 static uint8_t tramp_parse_packet(uint8_t *payload) {

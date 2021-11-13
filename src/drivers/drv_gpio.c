@@ -1,6 +1,6 @@
 #include "drv_gpio.h"
 
-#include "defines.h"
+#include "project.h"
 
 static volatile uint8_t fpv_init_done = 0;
 
@@ -24,25 +24,9 @@ void gpio_init() {
   gpio_pin_set(VREG_PIN_1);
 #endif
 
-#if (LED_NUMBER > 0)
-  gpio_pin_init(&init, LED1PIN);
-#endif
-#if (LED_NUMBER > 1)
-  gpio_pin_init(&init, LED2PIN);
-#endif
-#if (LED_NUMBER > 2)
-  gpio_pin_init(&init, LED3PIN);
-#endif
-#if (LED_NUMBER > 3)
-  gpio_pin_init(&init, LED4PIN);
-#endif
-
-#if (AUX_LED_NUMBER > 0)
-  gpio_pin_init(&init, AUX_LED1PIN);
-#endif
-#if (AUX_LED_NUMBER > 1)
-  gpio_pin_init(&init, AUX_LED2PIN);
-#endif
+  for (uint32_t i = 0; i < LED_PIN_MAX; i++) {
+    gpio_pin_init(&init, led_defs[i].pin);
+  }
 
 #if defined(FPV_SWITCH) && defined(FPV_PIN)
   if (FPV_PIN == PIN_A13 || FPV_PIN == PIN_A14) {
@@ -77,32 +61,24 @@ int gpio_init_fpv(uint8_t mode) {
   return 0;
 }
 
-void gpio_pin_init(LL_GPIO_InitTypeDef *init, gpio_pins_t pin) {
-  init->Pin = gpio_pin_defs[pin].pin;
-  LL_GPIO_Init(gpio_pin_defs[pin].port, init);
+void gpio_pin_init(LL_GPIO_InitTypeDef *init, const gpio_pin_def_t *pin) {
+  init->Pin = pin->pin_mask;
+  LL_GPIO_Init(pin->port, init);
 }
 
-void gpio_pin_init_af(LL_GPIO_InitTypeDef *init, gpio_pins_t pin, uint32_t af) {
-  init->Alternate = af;
-  gpio_pin_init(init, pin);
+void gpio_pin_init_af(LL_GPIO_InitTypeDef *init, const gpio_af_pin_def_t *pin_af) {
+  init->Alternate = pin_af->af;
+  gpio_pin_init(init, pin_af->pin);
 }
 
-void gpio_pin_set(gpio_pins_t pin) {
-  LL_GPIO_SetOutputPin(gpio_pin_defs[pin].port, gpio_pin_defs[pin].pin);
+void gpio_pin_set(const gpio_pin_def_t *pin) {
+  LL_GPIO_SetOutputPin(pin->port, pin->pin_mask);
 }
 
-void gpio_pin_reset(gpio_pins_t pin) {
-  LL_GPIO_ResetOutputPin(gpio_pin_defs[pin].port, gpio_pin_defs[pin].pin);
+void gpio_pin_reset(const gpio_pin_def_t *pin) {
+  LL_GPIO_ResetOutputPin(pin->port, pin->pin_mask);
 }
 
-uint32_t gpio_pin_read(gpio_pins_t pin) {
-  return LL_GPIO_IsInputPinSet(gpio_pin_defs[pin].port, gpio_pin_defs[pin].pin);
+uint32_t gpio_pin_read(const gpio_pin_def_t *pin) {
+  return LL_GPIO_IsInputPinSet(pin->port, pin->pin_mask);
 }
-
-#define GPIO_PIN(port_num, num) MAKE_PIN_DEF(port_num, num),
-
-const volatile gpio_pin_def_t gpio_pin_defs[GPIO_PINS_MAX] = {
-    {},
-    GPIO_PINS};
-
-#undef GPIO_PIN

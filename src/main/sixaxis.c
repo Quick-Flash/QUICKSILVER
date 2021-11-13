@@ -26,20 +26,6 @@
 // this is the value of both cos 45 and sin 45 = 1/sqrt(2)
 #define INVSQRT2 0.707106781f
 
-// temporary fix for compatibility between versions
-#ifndef GYRO_ID_1
-#define GYRO_ID_1 0x68
-#endif
-#ifndef GYRO_ID_2
-#define GYRO_ID_2 0x98
-#endif
-#ifndef GYRO_ID_3
-#define GYRO_ID_3 0x7D
-#endif
-#ifndef GYRO_ID_4
-#define GYRO_ID_4 0x72
-#endif
-
 static filter_t filter[FILTER_MAX_SLOTS];
 static filter_state_t filter_state[FILTER_MAX_SLOTS][3];
 
@@ -81,7 +67,7 @@ extern target_info_t target_info;
 
 int sixaxis_check(void) {
   // read "who am I" register
-  uint8_t id = MPU6XXX_dma_spi_read(MPU_RA_WHO_AM_I);
+  const uint8_t id = MPU6XXX_dma_spi_read(MPU_RA_WHO_AM_I);
 
 #ifdef DEBUG
   debug.gyroid = id;
@@ -89,7 +75,12 @@ int sixaxis_check(void) {
   target_info.gyro_id = id;
 
 #ifndef DISABLE_GYRO_CHECK
-  return (GYRO_ID_1 == id || GYRO_ID_2 == id || GYRO_ID_3 == id || GYRO_ID_4 == id);
+  for (uint8_t i = 0; i < 4; i++) {
+    if (gyro_defs[0].ids[i] == id) {
+      return 1;
+    }
+  }
+  return 0;
 #else
   return 1;
 #endif
@@ -132,7 +123,7 @@ void sixaxis_read(void) {
     state.accel_raw.axis[0] = -state.accel_raw.axis[0];
   }
 
-  if (profile.motor.gyro_orientation & GYRO_FLIP_180) {
+  if (profile.motor.gyro_orientation & GYRO_ROTATE_FLIP) {
     state.accel_raw.axis[2] = -state.accel_raw.axis[2];
     state.accel_raw.axis[0] = -state.accel_raw.axis[0];
   }
@@ -182,7 +173,7 @@ void sixaxis_read(void) {
     state.gyro_raw.axis[0] = -state.gyro_raw.axis[0];
   }
 
-  if (profile.motor.gyro_orientation & GYRO_FLIP_180) {
+  if (profile.motor.gyro_orientation & GYRO_ROTATE_FLIP) {
     state.gyro_raw.axis[1] = -state.gyro_raw.axis[1];
     state.gyro_raw.axis[2] = -state.gyro_raw.axis[2];
   }

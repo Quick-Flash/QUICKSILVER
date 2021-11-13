@@ -34,7 +34,7 @@ extern uint8_t telemetry_offset;
 extern uint8_t telemetry_packet[14];
 extern uint8_t ready_for_next_telemetry;
 
-#define USART usart_port_defs[serial_rx_port]
+#define USART uart_ports[serial_rx_port - 1]
 
 void rx_serial_process_ibus() {
   uint8_t frameLength = 0;

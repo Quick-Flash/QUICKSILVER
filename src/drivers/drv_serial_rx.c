@@ -5,7 +5,7 @@
 #include "drv_time.h"
 #include "profile.h"
 
-#define USART usart_port_defs[serial_rx_port]
+#define USART uart_ports[serial_rx_port - 1]
 
 // FUNCTION TO COMMAND EXTERNAL USART INVERTER HIGH OR LOW
 // Always called during boot in main.c
@@ -213,7 +213,7 @@ void serial_rx_init(rx_serial_protocol_t proto) {
     gpio_init.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
     gpio_init.Pull = LL_GPIO_PULL_UP;
 
-    gpio_pin_init_af(&gpio_init, USART.rx_pin, USART.gpio_af);
+    gpio_pin_init_af(&gpio_init, &USART.rx);
     break;
 
   case RX_SERIAL_PROTOCOL_SBUS:
@@ -225,7 +225,7 @@ void serial_rx_init(rx_serial_protocol_t proto) {
     gpio_init.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
     gpio_init.Pull = LL_GPIO_PULL_NO;
 
-    gpio_pin_init_af(&gpio_init, USART.rx_pin, USART.gpio_af);
+    gpio_pin_init_af(&gpio_init, &USART.rx);
     break;
 
   default:
@@ -240,7 +240,7 @@ void serial_rx_init(rx_serial_protocol_t proto) {
     gpio_init.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
     gpio_init.Pull = LL_GPIO_PULL_NO;
 
-    gpio_pin_init_af(&gpio_init, USART.tx_pin, USART.gpio_af);
+    gpio_pin_init_af(&gpio_init, &USART.tx);
     break;
 
   default:
@@ -248,7 +248,7 @@ void serial_rx_init(rx_serial_protocol_t proto) {
     break;
   }
 
-  serial_enable_rcc(serial_rx_port);
+  serial_enable_rcc(&USART);
 
   LL_USART_Disable(USART.channel);
   LL_USART_DeInit(USART.channel);
@@ -315,7 +315,7 @@ void serial_rx_init(rx_serial_protocol_t proto) {
   LL_USART_ConfigAsyncMode(USART.channel);
   LL_USART_Enable(USART.channel);
 
-  serial_enable_isr(serial_rx_port);
+  serial_enable_isr(&USART);
   LL_USART_EnableIT_RXNE(USART.channel);
 }
 #endif

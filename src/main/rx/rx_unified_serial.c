@@ -49,7 +49,7 @@ static uint16_t protocol_detect_timer = 0;
 
 extern profile_t profile;
 
-#define USART usart_port_defs[serial_rx_port]
+#define USART uart_ports[serial_rx_port - 1]
 
 void TX_USART_ISR(void) {
   //USART_ClearITPendingBit() for TC handled in drv_serial.c

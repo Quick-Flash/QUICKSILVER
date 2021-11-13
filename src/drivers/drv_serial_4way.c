@@ -23,7 +23,7 @@
 #include "drv_gpio.h"
 #include "drv_motor.h"
 #include "drv_serial_4way.h"
-#include "drv_serial_soft.h"
+#include "drv_time.h"
 #include "drv_usb.h"
 #include "usb_configurator.h"
 #include "util/cbor_helper.h"
@@ -97,8 +97,6 @@
 
 uint8_t selected_esc;
 
-static gpio_pins_t esc_pins[ESC_COUNT] = {GPIO_PIN_INVALID};
-
 static uint8_32_u device_info;
 static uint8_16_u crc_in;
 static uint8_16_u crc_out;
@@ -120,7 +118,7 @@ bool is_mcu_connected(void) {
 }
 
 bool is_esc_high(uint8_t esc) {
-  return gpio_pin_read(esc_pins[esc]) > 0;
+  return gpio_pin_read(motor_pins[esc]) > 0;
 }
 
 bool is_esc_low(uint8_t esc) {
@@ -128,11 +126,11 @@ bool is_esc_low(uint8_t esc) {
 }
 
 void set_esc_high(uint8_t esc) {
-  gpio_pin_set(esc_pins[esc]);
+  gpio_pin_set(motor_pins[esc]);
 }
 
 void set_esc_low(uint8_t esc) {
-  gpio_pin_reset(esc_pins[esc]);
+  gpio_pin_reset(motor_pins[esc]);
 }
 
 void set_esc_input(uint8_t esc) {
@@ -141,7 +139,7 @@ void set_esc_input(uint8_t esc) {
   gpio_init.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
   gpio_init.Pull = LL_GPIO_PULL_UP;
   gpio_init.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-  gpio_pin_init(&gpio_init, esc_pins[esc]);
+  gpio_pin_init(&gpio_init, motor_pins[esc]);
 }
 
 void set_esc_output(uint8_t esc) {
@@ -150,7 +148,7 @@ void set_esc_output(uint8_t esc) {
   gpio_init.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   gpio_init.Pull = LL_GPIO_PULL_NO;
   gpio_init.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-  gpio_pin_init(&gpio_init, esc_pins[esc]);
+  gpio_pin_init(&gpio_init, motor_pins[esc]);
 }
 
 static uint8_t read_byte(void) {
@@ -224,15 +222,10 @@ uint8_t serial_4way_init() {
   timer_delay_us(250000);
 
   // set up 1wire serial to each esc
-
-#define MOTOR_PIN(port, pin, pin_af, timer, timer_channel)     \
-  esc_pins[MOTOR_PIN_IDENT(port, pin)] = PIN_IDENT(port, pin); \
-  set_esc_input(MOTOR_PIN_IDENT(port, pin));                   \
-  set_esc_high(MOTOR_PIN_IDENT(port, pin));
-
-  MOTOR_PINS
-
-#undef MOTOR_PIN
+  for (size_t i = 0; i < MOTOR_PIN_MAX; i++) {
+    set_esc_input(i);
+    set_esc_high(i);
+  }
 
   return ESC_COUNT;
 }

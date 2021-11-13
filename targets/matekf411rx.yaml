@@ -1,0 +1,70 @@
+---
+name: matekf411rx
+
+spi_ports:
+  - index: 1
+    sck: PA5
+    miso: PA6
+    mosi: PA7
+  - index: 2
+    sck: PB13
+    miso: PB14
+    mosi: PB15
+  - index: 3
+    sck: PB3
+    miso: PB4
+    mosi: PB5
+
+uart_ports:
+  - index: 1
+    rx: PA10
+    tx: PA9
+  - index: 2
+    rx: PA3
+    tx: PA2
+
+leds:
+  - index: 1
+    pin: PC13
+    invert: true
+
+gyros:
+  - index: 1
+    type: MPU6XXX
+    interrupt: PA1
+    spi:
+      port: 1
+      nss: PA4
+    ids:
+      - 0x68
+      - 0x73
+      - 0x78
+      - 0x71
+    orientation:
+      - 90_CCW
+
+max7456:
+  spi:
+    port: 2
+    nss: PB12
+
+cc2500:
+  spi:
+    port: 3
+    nss: PA15
+  gdo0: PC14
+  tx_en: PA8
+  lna_en: PA13
+  ant_sel: PA14
+
+battery:
+  pin: PB0
+  divider_r1: 10000
+  divider_r2: 1000
+  ref_voltage: 3.3
+
+motor_pins:
+  - PB7
+  - PB8
+  - PB10
+  - PB6

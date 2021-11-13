@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stm32f4xx_ll_spi.h>
 
-#include "defines.h"
 #include "drv_gpio.h"
 #include "drv_spi.h"
 #include "drv_time.h"
@@ -11,38 +10,13 @@
 
 #ifdef STM32F4
 
-#if defined(ICM20602_SPI_PORT) && defined(ICM20602_NSS)
-#define MPU6XXX_SPI_PORT ICM20602_SPI_PORT
-#define MPU6XXX_NSS ICM20602_NSS
-#ifdef ICM20602_INT
-#define MPU6XXX_INT ICM20602_INT
-#endif
-#endif
-
-#if defined(ICM20601_SPI_PORT) && defined(ICM20601_NSS)
-#define MPU6XXX_SPI_PORT ICM20601_SPI_PORT
-#define MPU6XXX_NSS ICM20601_NSS
-#ifdef ICM20601_INT
-#define MPU6XXX_INT ICM20601_INT
-#endif
-#endif
-
-#if defined(ICM20608_SPI_PORT) && defined(ICM20608_NSS)
-#define MPU6XXX_SPI_PORT ICM20608_SPI_PORT
-#define MPU6XXX_NSS ICM20608_NSS
-#ifdef ICM20608_INT
-#define MPU6XXX_INT ICM20608_INT
-#endif
-#endif
-
-#define PORT spi_port_defs[MPU6XXX_SPI_PORT]
+#define DEVICE gyro_defs[GYRO_1].spi
+#define PORT DEVICE.port
 
 //  Initialize SPI Connection to Gyro
 void spi_gyro_init(void) {
 
-  //*********************GPIO**************************************
-
-  spi_init_pins(MPU6XXX_SPI_PORT, MPU6XXX_NSS);
+  spi_init_pins(&DEVICE);
 
 // Interrupt GPIO
 #ifdef MPU6XXX_INT
@@ -54,11 +28,9 @@ void spi_gyro_init(void) {
   gpio_pin_init(&gpio_init, MPU6XXX_INT);
 #endif
 
-  //*********************SPI/DMA**********************************
-  spi_enable_rcc(MPU6XXX_SPI_PORT);
+  spi_enable_rcc(PORT);
 
-  // SPI Config
-  LL_SPI_DeInit(PORT.channel);
+  LL_SPI_DeInit(PORT->channel);
 
   LL_SPI_InitTypeDef spi_init;
   spi_init.TransferDirection = LL_SPI_FULL_DUPLEX;
@@ -71,25 +43,25 @@ void spi_gyro_init(void) {
   spi_init.BitOrder = LL_SPI_MSB_FIRST;
   spi_init.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
   spi_init.CRCPoly = 7;
-  LL_SPI_Init(PORT.channel, &spi_init);
+  LL_SPI_Init(PORT->channel, &spi_init);
 
-  LL_SPI_Enable(PORT.channel);
+  LL_SPI_Enable(PORT->channel);
 
   // Dummy read to clear receive buffer
-  while (LL_SPI_IsActiveFlag_TXE(PORT.channel) == RESET)
+  while (LL_SPI_IsActiveFlag_TXE(PORT->channel) == RESET)
     ;
-  LL_SPI_ReceiveData8(PORT.channel);
+  LL_SPI_ReceiveData8(PORT->channel);
 
-  spi_dma_init(MPU6XXX_SPI_PORT);
+  spi_dma_init(PORT);
 }
 
 //deinit/reinit spi for unique slave configuration
 void spi_MPU6XXX_reinit_slow(void) {
-  spi_dma_wait_for_ready(MPU6XXX_SPI_PORT);
-  LL_SPI_Disable(PORT.channel);
+  spi_dma_wait_for_ready(PORT);
+  LL_SPI_Disable(PORT->channel);
 
   // SPI Config
-  LL_SPI_DeInit(PORT.channel);
+  LL_SPI_DeInit(PORT->channel);
   LL_SPI_InitTypeDef spi_init;
   spi_init.TransferDirection = LL_SPI_FULL_DUPLEX;
   spi_init.Mode = LL_SPI_MODE_MASTER;
@@ -97,29 +69,36 @@ void spi_MPU6XXX_reinit_slow(void) {
   spi_init.ClockPolarity = LL_SPI_POLARITY_HIGH;
   spi_init.ClockPhase = LL_SPI_PHASE_2EDGE;
   spi_init.NSS = LL_SPI_NSS_SOFT;
-#if defined(ICM20601_SPI_PORT) || defined(ICM20608_SPI_PORT) //5.25mhz SPI
-  spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV8;
-#else
-#if defined(ICM20602_SPI_PORT) //10mhz SPI
-  spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV4;
-#else                          //(MPUXXXX)			 //20mhz SPI
-  spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV64;
-#endif
-#endif
+
+  switch (gyro_defs[GYRO_1].type) {
+  case ICM20608:
+  case ICM20601:
+    spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV8;
+    break;
+  case ICM20602:
+    spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV4;
+    break;
+  case MPU6XXX:
+  default:
+    spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV64;
+    break;
+  }
+
   spi_init.BitOrder = LL_SPI_MSB_FIRST;
   spi_init.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
   spi_init.CRCPoly = 7;
-  LL_SPI_Init(PORT.channel, &spi_init);
+  LL_SPI_Init(PORT->channel, &spi_init);
 
-  LL_SPI_Enable(PORT.channel);
+  LL_SPI_Enable(PORT->channel);
 }
 
 void spi_MPU6XXX_reinit_fast(void) {
-  spi_dma_wait_for_ready(MPU6XXX_SPI_PORT);
-  LL_SPI_Disable(PORT.channel);
+  spi_dma_wait_for_ready(PORT);
+
+  LL_SPI_Disable(PORT->channel);
 
   // SPI Config
-  LL_SPI_DeInit(PORT.channel);
+  LL_SPI_DeInit(PORT->channel);
   LL_SPI_InitTypeDef spi_init;
   spi_init.TransferDirection = LL_SPI_FULL_DUPLEX;
   spi_init.Mode = LL_SPI_MODE_MASTER;
@@ -127,21 +106,27 @@ void spi_MPU6XXX_reinit_fast(void) {
   spi_init.ClockPolarity = LL_SPI_POLARITY_HIGH;
   spi_init.ClockPhase = LL_SPI_PHASE_2EDGE;
   spi_init.NSS = LL_SPI_NSS_SOFT;
-#if defined(ICM20601_SPI_PORT) || defined(ICM20608_SPI_PORT) //5.25mhz SPI
-  spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV8;
-#else
-#if defined(ICM20602_SPI_PORT) //10mhz SPI
-  spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV4;
-#else                          //(MPUXXXX)			 //20mhz SPI
-  spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV2;
-#endif
-#endif
+
+  switch (gyro_defs[GYRO_1].type) {
+  case ICM20608:
+  case ICM20601:
+    spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV8;
+    break;
+  case ICM20602:
+    spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV4;
+    break;
+  case MPU6XXX:
+  default:
+    spi_init.BaudRate = LL_SPI_BAUDRATEPRESCALER_DIV2;
+    break;
+  }
+
   spi_init.BitOrder = LL_SPI_MSB_FIRST;
   spi_init.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
   spi_init.CRCPoly = 7;
-  LL_SPI_Init(PORT.channel, &spi_init);
+  LL_SPI_Init(PORT->channel, &spi_init);
 
-  LL_SPI_Enable(PORT.channel);
+  LL_SPI_Enable(PORT->channel);
 }
 
 //*******************************************************************************SPI / DMA FUNCTIONS********************************************************************************
@@ -152,22 +137,22 @@ uint8_t MPU6XXX_dma_spi_read(uint8_t reg) {
 
   uint8_t buffer[2] = {reg | 0x80, 0x00};
 
-  spi_csn_enable(MPU6XXX_NSS);
-  spi_dma_transfer_bytes(MPU6XXX_SPI_PORT, buffer, 2);
-  spi_csn_disable(MPU6XXX_NSS);
+  spi_csn_enable(&DEVICE);
+  spi_dma_transfer_bytes(PORT, buffer, 2);
+  spi_csn_disable(&DEVICE);
 
   return buffer[1];
 }
 
 // blocking dma write of a single register
-void MPU6XXX_dma_spi_write(uint8_t reg, uint8_t data) { //MPU6XXX_dma_spi_write
+void MPU6XXX_dma_spi_write(uint8_t reg, uint8_t data) {
   spi_MPU6XXX_reinit_slow();
 
   uint8_t buffer[2] = {reg, data};
 
-  spi_csn_enable(MPU6XXX_NSS);
-  spi_dma_transfer_bytes(MPU6XXX_SPI_PORT, buffer, 2);
-  spi_csn_disable(MPU6XXX_NSS);
+  spi_csn_enable(&DEVICE);
+  spi_dma_transfer_bytes(PORT, buffer, 2);
+  spi_csn_disable(&DEVICE);
 }
 
 void MPU6XXX_dma_read_data(uint8_t reg, int *data, int size) {
@@ -175,9 +160,9 @@ void MPU6XXX_dma_read_data(uint8_t reg, int *data, int size) {
 
   uint8_t buffer[15] = {reg | 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-  spi_csn_enable(MPU6XXX_NSS);
-  spi_dma_transfer_bytes(MPU6XXX_SPI_PORT, buffer, size + 1);
-  spi_csn_disable(MPU6XXX_NSS);
+  spi_csn_enable(&DEVICE);
+  spi_dma_transfer_bytes(PORT, buffer, size + 1);
+  spi_csn_disable(&DEVICE);
 
   for (int i = 1; i < size + 1; i++) {
     data[i - 1] = buffer[i];

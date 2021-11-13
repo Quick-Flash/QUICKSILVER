@@ -1,0 +1,45 @@
+---
+name: pedro_f4
+
+spi_ports:
+  - index: 1
+    sck: PA5
+    miso: PA6
+    mosi: PA7
+  - index: 2
+    sck: PB13
+    miso: PB14
+    mosi: PB15
+  - index: 3
+    sck: PB3
+    miso: PB4
+    mosi: PB5
+
+uart_ports:
+  - index: 1
+    rx: PA10
+    tx: PA9
+  - index: 3
+    rx: PB11
+    tx: PB10
+  - index: 4
+    rx: PA1
+    tx: PA0
+
+leds:
+  - index: 1
+    pin: PC12
+    invert: true
+
+gyros:
+  - index: 1
+    type: MPU6XXX
+    spi:
+      port: 1
+      nss: PA4
+
+motor_pins:
+  - PA3
+  - PA2
+  - PB0
+  - PB1

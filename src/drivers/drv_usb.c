@@ -1,8 +1,8 @@
 #include "drv_usb.h"
 
-#include "defines.h"
 #include "drv_gpio.h"
 #include "drv_time.h"
+#include "project.h"
 
 #include "util/circular_buffer.h"
 
@@ -321,8 +321,9 @@ void usb_init(void) {
   gpio_init.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   gpio_init.Speed = LL_GPIO_SPEED_FREQ_HIGH;
   gpio_init.Pull = LL_GPIO_PULL_NO;
-  gpio_pin_init_af(&gpio_init, PIN_A11, GPIO_AF10_OTG_FS);
-  gpio_pin_init_af(&gpio_init, PIN_A12, GPIO_AF10_OTG_FS);
+  gpio_init.Alternate = GPIO_AF10_OTG_FS;
+  gpio_pin_init(&gpio_init, &PA11);
+  gpio_pin_init(&gpio_init, &PA12);
 
 #ifdef USB_DETECT_PIN
   gpio_init.Mode = LL_GPIO_MODE_INPUT;

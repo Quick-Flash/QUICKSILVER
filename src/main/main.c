@@ -30,7 +30,6 @@
 
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "drv_serial_4way.h"
-#include "drv_serial_soft.h"
 #endif
 
 #ifdef STM32F4
@@ -118,7 +117,7 @@ int main(void) {
 
 #ifdef SERIAL_RX
   // if our RX is a serial, only init if we have valid usart
-  if (profile.serial.rx != USART_PORT_INVALID) {
+  if (profile.serial.rx != UART_PORT_INVALID) {
     rx_init();
   }
 #else
@@ -218,7 +217,7 @@ int main(void) {
       gestures();
     }
 
-    if (LED_NUMBER > 0) {
+    if (LED_PIN_MAX > 0) {
       // led flash logic
       if (flags.lowbatt)
         ledflash(500000, 8);
@@ -278,7 +277,7 @@ int main(void) {
     // receiver function
 #ifdef SERIAL_RX
     // if our RX is a serial, only check if we have valid usart and its the one currently active
-    if (serial_rx_port == profile.serial.rx && serial_rx_port != USART_PORT_INVALID) {
+    if (serial_rx_port == profile.serial.rx && serial_rx_port != UART_PORT_INVALID) {
       rx_check();
     }
 #else

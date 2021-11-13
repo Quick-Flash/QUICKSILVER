@@ -1,0 +1,79 @@
+// ###########################
+// GENERATED FILE, DO NOT EDIT
+// TARGET: {{ name }}
+// MCU: {{ mcu }}
+// ###########################
+
+#pragma once
+
+#include "system.h"
+
+#define TARGET_NAME "{{ name }}"
+
+#define SOFTSPI_NONE
+
+enum uart_port_names {
+  UART_PORT_INVALID,
+{%- for uart in uart_ports %}
+  UART_PORT_{{ uart.index }},
+{%- endfor %}
+  UART_PORT_MAX
+};
+
+extern const struct uart_port_def uart_ports[UART_PORT_MAX];
+extern const char *uart_port_strings[UART_PORT_MAX];
+
+enum spi_port_names {
+  SPI_PORT_INVALID,
+{%- for spi in spi_ports %}
+  SPI_PORT_{{ spi.index }},
+{%- endfor %}
+  SPI_PORT_MAX
+};
+
+extern const struct spi_port_def spi_ports[SPI_PORT_MAX];
+
+enum led_pin_names {
+{%- for led in leds %}
+  LED_PIN_{{ led.index }},
+{%- endfor %}
+  LED_PIN_MAX
+};
+
+extern const struct led_pin_def led_defs[LED_PIN_MAX];
+
+enum gyro_names {
+{%- for gyro in gyros %}
+  GYRO_{{ gyro.index }},
+{%- endfor %}
+  GYRO_MAX
+};
+
+extern const struct gyro_device_def gyro_defs[GYRO_MAX];
+
+enum motor_pin_names {
+{%- for pin in motor_pins %}
+  MOTOR_PIN_{{ loop.index - 1 }},
+{%- endfor %}
+  MOTOR_PIN_MAX
+};
+
+extern const struct gpio_pin_def* motor_pins[MOTOR_PIN_MAX];
+extern const char *motor_pin_strings[MOTOR_PIN_MAX];
+
+{% if battery -%}
+extern const struct battery_adc_def battery_adc;
+{%- else -%}
+#define DISABLE_ADC
+{%- endif %}
+
+{% if max7456 -%}
+#define ENABLE_OSD
+extern const struct spi_device_def max7456_device;
+{%- endif %}
+
+{% if cc2500 -%}
+#define USE_CC2500
+extern const struct cc2500_device_def cc2500_device;
+{%- endif -%}
+

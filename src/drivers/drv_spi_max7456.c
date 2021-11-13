@@ -4,7 +4,6 @@
 
 #include <stm32f4xx_ll_spi.h>
 
-#include "defines.h"
 #include "drv_spi.h"
 #include "drv_time.h"
 #include "project.h"
@@ -14,28 +13,16 @@
 #ifdef ENABLE_OSD
 
 //SPI PINS
-#define PORT spi_port_defs[MAX7456_SPI_PORT]
-
-#define DMA_RX_STREAM PORT.dma.rx_stream
-#define DMA_TX_STREAM PORT.dma.tx_stream
-#define DMA_RX_CHANNEL PORT.dma.channel
-#define DMA_TX_CHANNEL PORT.dma.channel
-#define DMA_RX_TCI_FLAG PORT.dma.rx_tci_flag
-#define DMA_TX_TCI_FLAG PORT.dma.tx_tci_flag
-#define DMA_RX_STREAM_IRQ PORT.dma.rx_it
-#define DMA_RX_IT_FLAG PORT.dma.rx_it_flag
+#define DEVICE max7456_device
+#define PORT DEVICE.port
 
 //  Initialize SPI Connection to max7456
 void spi_max7456_init(void) {
-
-  //*********************GPIO**************************************
-  spi_init_pins(MAX7456_SPI_PORT, MAX7456_NSS);
-
-  //*********************SPI/DMA**********************************
-  spi_enable_rcc(MAX7456_SPI_PORT);
+  spi_init_pins(&DEVICE);
+  spi_enable_rcc(PORT);
 
   // SPI Config
-  LL_SPI_DeInit(PORT.channel);
+  LL_SPI_DeInit(PORT->channel);
   LL_SPI_InitTypeDef SPI_InitStructure;
   SPI_InitStructure.TransferDirection = LL_SPI_FULL_DUPLEX;
   SPI_InitStructure.Mode = LL_SPI_MODE_MASTER;
@@ -47,25 +34,25 @@ void spi_max7456_init(void) {
   SPI_InitStructure.BitOrder = LL_SPI_MSB_FIRST;
   SPI_InitStructure.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
   SPI_InitStructure.CRCPoly = 7;
-  LL_SPI_Init(PORT.channel, &SPI_InitStructure);
-  LL_SPI_Enable(PORT.channel);
+  LL_SPI_Init(PORT->channel, &SPI_InitStructure);
+  LL_SPI_Enable(PORT->channel);
 
   // Dummy read to clear receive buffer
-  while (LL_SPI_IsActiveFlag_TXE(PORT.channel) == RESET)
+  while (LL_SPI_IsActiveFlag_TXE(PORT->channel) == RESET)
     ;
-  LL_SPI_ReceiveData8(PORT.channel);
+  LL_SPI_ReceiveData8(PORT->channel);
 
-  spi_dma_init(MAX7456_SPI_PORT);
+  spi_dma_init(PORT);
 }
 
 //deinit/reinit spi for unique slave configuration
 void spi_max7556_reinit(void) {
-  spi_dma_wait_for_ready(MAX7456_SPI_PORT);
+  spi_dma_wait_for_ready(PORT);
 
-  LL_SPI_Disable(PORT.channel);
+  LL_SPI_Disable(PORT->channel);
 
   // SPI Config
-  LL_SPI_DeInit(PORT.channel);
+  LL_SPI_DeInit(PORT->channel);
   LL_SPI_InitTypeDef SPI_InitStructure;
   SPI_InitStructure.TransferDirection = LL_SPI_FULL_DUPLEX;
   SPI_InitStructure.Mode = LL_SPI_MODE_MASTER;
@@ -77,8 +64,8 @@ void spi_max7556_reinit(void) {
   SPI_InitStructure.BitOrder = LL_SPI_MSB_FIRST;
   SPI_InitStructure.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
   SPI_InitStructure.CRCPoly = 7;
-  LL_SPI_Init(PORT.channel, &SPI_InitStructure);
-  LL_SPI_Enable(PORT.channel);
+  LL_SPI_Init(PORT->channel, &SPI_InitStructure);
+  LL_SPI_Enable(PORT->channel);
 }
 
 //*******************************************************************************SPI / DMA FUNCTIONS********************************************************************************
@@ -93,9 +80,9 @@ uint8_t max7456_dma_spi_read(uint8_t reg) {
 
   uint8_t buffer[2] = {reg, 0xFF};
 
-  spi_csn_enable(MAX7456_NSS);
-  spi_dma_transfer_bytes(MAX7456_SPI_PORT, buffer, 2);
-  spi_csn_disable(MAX7456_NSS);
+  spi_csn_enable(&DEVICE);
+  spi_dma_transfer_bytes(PORT, buffer, 2);
+  spi_csn_disable(&DEVICE);
 
   return buffer[1];
 }
@@ -105,9 +92,9 @@ void max7456_dma_spi_write(uint8_t reg, uint8_t data) {
   spi_max7556_reinit();
 
   uint8_t buffer[2] = {reg, data};
-  spi_csn_enable(MAX7456_NSS);
-  spi_dma_transfer_bytes(MAX7456_SPI_PORT, buffer, 2);
-  spi_csn_disable(MAX7456_NSS);
+  spi_csn_enable(&DEVICE);
+  spi_dma_transfer_bytes(PORT, buffer, 2);
+  spi_csn_disable(&DEVICE);
 }
 
 // non blocking bulk dma transmit for interrupt callback configuration
@@ -115,13 +102,13 @@ void max7456_dma_it_transfer_bytes(uint8_t *buffer_address, uint8_t buffer_lengt
   osd_dma_status = BUSY;
   spi_max7556_reinit();
 
-  spi_csn_enable(MAX7456_NSS);
-  spi_dma_transfer_begin(MAX7456_SPI_PORT, buffer_address, buffer_length);
+  spi_csn_enable(&DEVICE);
+  spi_dma_transfer_begin(PORT, buffer_address, buffer_length);
 }
 
 // callback function to disable csn
 void max7456_dma_rx_isr() {
-  spi_csn_disable(MAX7456_NSS);
+  spi_csn_disable(&DEVICE);
   osd_dma_status = READY;
 }
 

@@ -1,0 +1,120 @@
+#include "target.h"
+
+#include "profile.h"
+
+const struct uart_port_def uart_ports[UART_PORT_MAX] = {
+{%- for uart in uart_ports %}
+  {
+    .index = {{ uart.index }},
+    .channel = {{ uart.type }}{{ uart.index }},
+    .irq = {{ uart.type }}{{ uart.index }}_IRQn,
+    .rx = {
+      .pin = &{{ uart.rx.pin }},
+      .af = {{ uart.rx.af }},
+    },
+    .tx = {
+      .pin = &{{ uart.tx.pin }},
+      .af = {{ uart.tx.af }},
+    },
+  },
+{%- endfor %}
+};
+
+const char *uart_port_strings[UART_PORT_MAX] = {
+  "NONE",
+{%- for uart in uart_ports %}
+  "USART_{{ uart.index }}",
+{%- endfor %}
+};
+
+const struct spi_port_def spi_ports[SPI_PORT_MAX] = {
+{%- for spi in spi_ports %}
+  {
+    .index = {{ spi.index }},
+    .channel = SPI{{ spi.index }},
+    .sck = {
+      .pin = &{{ spi.sck.pin }},
+      .af = {{ spi.sck.af }},
+    },
+    .miso = {
+      .pin = &{{ spi.miso.pin }},
+      .af = {{ spi.miso.af }},
+    },
+    .mosi = {
+      .pin = &{{ spi.mosi.pin }},
+      .af = {{ spi.mosi.af }},
+    },
+    .dma = &spi_dma_defs[{{ spi.index - 1 }}],
+  },
+{%- endfor %}
+};
+
+const struct led_pin_def led_defs[LED_PIN_MAX] = {
+{%- for led in leds %}
+  {
+    .index = {{ led.index }},
+    .pin = &{{ led.pin }},
+    .invert = {{ 1 if led.invert else 0}},
+  },
+{%- endfor %}
+};
+
+const struct gyro_device_def gyro_defs[GYRO_MAX] = {
+{%- for dev in gyros %}
+  {
+    .type = {{ dev.type }},
+    .spi = {
+      .port = &spi_ports[{{ dev.spi.port - 1 }}],
+      .nss = &{{ dev.spi.nss }},
+    },
+    .orientation = {% for o in dev.orientation -%}GYRO_ROTATE_{{ o }}{%- if not loop.last -%} | {%- endif -%}{%- endfor -%},
+    .ids = {
+      {%- for id in dev.ids %}
+      {{ "0x%0x" | format(id | int) }},
+      {%- endfor %}
+    },
+  },
+{%- endfor %}
+};
+
+const struct gpio_pin_def* motor_pins[MOTOR_PIN_MAX] = {
+{%- for pin in motor_pins %}
+  &{{ pin }},
+{%- endfor %}
+};
+
+const char *motor_pin_strings[MOTOR_PIN_MAX] = {
+{%- for pin in motor_pins %}
+  "{{ pin }}",
+{%- endfor %}
+};
+
+{% if battery -%}
+const struct battery_adc_def battery_adc = {
+  .pin = &{{ battery.pin }},
+  .adc_channel = {{ battery.adc_channel }},
+  .divider_r1 = {{ battery.divider_r1 }},
+  .divider_r2 = {{ battery.divider_r2 }},
+  .ref_voltage = {{ battery.ref_voltage }},
+};
+{%- endif %}
+
+{% if max7456 -%}
+const struct spi_device_def max7456_device = {
+  .port = &spi_ports[{{ max7456.spi.port - 1 }}],
+  .nss = &{{ max7456.spi.nss }},
+};
+{%- endif %}
+
+{% if cc2500 -%}
+const struct cc2500_device_def cc2500_device = {
+  .spi = {
+    .port = &spi_ports[{{ cc2500.spi.port - 1 }}],
+    .nss = &{{ cc2500.spi.nss }},
+  },
+  .gdo0 = &{{ cc2500.gdo0 }},
+  .tx_en = &{{ cc2500.tx_en }},
+  .lna_en = &{{ cc2500.lna_en }},
+  .ant_sel = &{{ cc2500.ant_sel }},
+};
+{%- endif -%}

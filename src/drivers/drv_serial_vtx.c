@@ -8,7 +8,7 @@
 
 #if defined(ENABLE_SMART_AUDIO) || defined(ENABLE_TRAMP)
 
-#define USART usart_port_defs[serial_smart_audio_port]
+#define USART uart_ports[serial_smart_audio_port - 1]
 
 uint8_t vtx_rx_data[VTX_BUFFER_SIZE];
 volatile circular_buffer_t vtx_rx_buffer = {

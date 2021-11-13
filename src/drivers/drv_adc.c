@@ -1,7 +1,6 @@
 #include "drv_adc.h"
 
 #include "debug.h"
-#include "defines.h"
 #include "drv_gpio.h"
 #include "filter.h"
 #include "profile.h"
@@ -16,6 +15,12 @@ extern profile_t profile;
 
 #ifndef DISABLE_ADC
 
+#ifndef ADC_SCALEFACTOR
+// 12 bit ADC has 4096 steps
+//scalefactor = (vref/4096) * (R1 + R2)/R2
+#define ADC_SCALEFACTOR (battery_adc.ref_voltage / 4096) * (battery_adc.divider_r1 + battery_adc.divider_r2) * (1 / battery_adc.divider_r2)
+#endif
+
 typedef struct {
   __IO uint16_t word1;
   __IO uint16_t word2;
@@ -28,7 +33,7 @@ uint16_t adcref_read(adcrefcal *adcref_address) {
 
 float vref_cal;
 
-void adc_init(void) {
+void adc_init() {
 
   //vref_int only exists on ADC1
   //example case: pc2 additional function ADC123_IN12
@@ -38,12 +43,10 @@ void adc_init(void) {
   LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_ADC1);
 
   //gpio configuration
-  {
-    LL_GPIO_InitTypeDef gpio_init;
-    gpio_init.Mode = LL_GPIO_MODE_ANALOG;
-    gpio_init.Pull = LL_GPIO_PULL_NO;
-    gpio_pin_init(&gpio_init, BATTERYPIN);
-  }
+  LL_GPIO_InitTypeDef gpio_init;
+  gpio_init.Mode = LL_GPIO_MODE_ANALOG;
+  gpio_init.Pull = LL_GPIO_PULL_NO;
+  gpio_pin_init(&gpio_init, battery_adc.pin);
 
   LL_ADC_CommonInitTypeDef adc_common_init;
   adc_common_init.CommonClock = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
@@ -75,14 +78,9 @@ void adc_init(void) {
   // different vccs will translate to a different adc scale factor,
   // so actual vcc is not important as long as the voltage is correct in the end
 #ifdef STM32F4
-  vref_cal = (3.3f / (float)ADC_REF_VOLTAGE) * (float)(adcref_read((adcrefcal *)0x1FFF7A2A));
+  vref_cal = (3.3f / battery_adc.ref_voltage) * (float)(adcref_read((adcrefcal *)0x1FFF7A2A));
 #endif
 }
-
-#define ADC_CHANNELS 2
-// internal adc channels:
-// 0 - vbat
-// 1 - vref
 
 uint16_t readADC1(int channel) {
   static uint8_t adc_channel_synchronizer; //the next adc channel to run when ready
@@ -99,8 +97,8 @@ uint16_t readADC1(int channel) {
     switch (adc_channel_synchronizer) {
     case 0:
       // Reconfigure the new adc channel
-      LL_ADC_SetChannelSamplingTime(ADC1, BATTERY_ADC_CHANNEL, LL_ADC_SAMPLINGTIME_480CYCLES);
-      LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, BATTERY_ADC_CHANNEL);
+      LL_ADC_SetChannelSamplingTime(ADC1, battery_adc.adc_channel, LL_ADC_SAMPLINGTIME_480CYCLES);
+      LL_ADC_REG_SetSequencerRanks(ADC1, LL_ADC_REG_RANK_1, battery_adc.adc_channel);
 
       // Take note of what channel conversion has just been requested
       adc_last_conversion = 0;
@@ -125,12 +123,6 @@ uint16_t readADC1(int channel) {
 
   return adc_array[channel];
 }
-
-#ifndef ADC_SCALEFACTOR
-// 12 bit ADC has 4096 steps
-//scalefactor = (vref/4096) * (R1 + R2)/R2
-#define ADC_SCALEFACTOR ((float)ADC_REF_VOLTAGE / 4096) * ((float)VOLTAGE_DIVIDER_R1 + (float)VOLTAGE_DIVIDER_R2) * (1 / (float)VOLTAGE_DIVIDER_R2)
-#endif
 
 float adc_read(int channel) {
   switch (channel) {
@@ -159,10 +151,13 @@ float adc_read(int channel) {
     return 0;
   }
 }
+
 #else
+
 // // lvc disabled
-void adc_init(void) {
+void adc_init() {
 }
+
 // dummy function with lvc disabled
 float adc_read(int channel) {
   switch (channel) {

@@ -40,8 +40,8 @@ extern uint8_t telemetry_offset;
 extern uint8_t telemetry_packet[14];
 extern uint8_t ready_for_next_telemetry;
 
-#define USART usart_port_defs[serial_rx_port]
-#define SPECTRUM_BIND_PIN usart_port_defs[profile.serial.rx].rx_pin
+#define USART uart_ports[serial_rx_port - 1]
+#define SPECTRUM_BIND_PIN uart_ports[profile.serial.rx - 1].rx.pin
 
 void rx_serial_process_dsmx() {
 
@@ -144,7 +144,7 @@ void rx_serial_process_dsmx() {
 
 // Send Spektrum bind pulses to a GPIO e.g. TX1
 void rx_spektrum_bind() {
-  if (profile.serial.rx == USART_PORT_INVALID) {
+  if (profile.serial.rx == UART_PORT_INVALID) {
     return;
   }
 

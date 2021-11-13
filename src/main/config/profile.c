@@ -146,14 +146,17 @@ const profile_t default_profile = {
         .gyro_orientation = GYRO_ROTATE_180,
 #endif
 #ifdef SENSOR_FLIP_180
-        .gyro_orientation = GYRO_FLIP_180,
+        .gyro_orientation = GYRO_ROTATE_FLIP,
 #endif
 #if !defined(SENSOR_ROTATE_90_CW) && !defined(SENSOR_ROTATE_45_CCW) && !defined(SENSOR_ROTATE_45_CW) && !defined(SENSOR_ROTATE_90_CCW) && !defined(SENSOR_ROTATE_180) && !defined(SENSOR_FLIP_180)
         .gyro_orientation = GYRO_ROTATE_NONE,
 #endif
-#define MOTOR_PIN(port, pin, pin_af, timer, timer_channel) MOTOR_PIN_IDENT(port, pin),
-        .motor_pins = {MOTOR_PINS},
-#undef MOTOR_PIN
+        .motor_pins = {
+            MOTOR_PIN_0,
+            MOTOR_PIN_1,
+            MOTOR_PIN_2,
+            MOTOR_PIN_3,
+        },
 #ifndef DISABLE_FLIP_SEQUENCER
         .turtle_throttle_percent = 10.0f,
 #else
@@ -165,12 +168,12 @@ const profile_t default_profile = {
 #ifdef RX_USART
         .rx = RX_USART,
 #else
-        .rx = USART_PORT_INVALID,
+        .rx = UART_PORT_INVALID,
 #endif
 #ifdef SMART_AUDIO_USART
         .smart_audio = SMART_AUDIO_USART,
 #else
-        .smart_audio = USART_PORT_INVALID,
+        .smart_audio = UART_PORT_INVALID,
 #endif
     },
 
@@ -457,13 +460,8 @@ target_info_t target_info = {
     .rx_protocol = RX_PROTOCOL,
     .quic_protocol_version = QUIC_PROTOCOL_VERSION,
 
-#define MOTOR_PIN(port, pin, pin_af, timer, timer_channel) "P" #port #pin,
-    .motor_pins = {MOTOR_PINS},
-#undef MOTOR_PIN
-
-#define USART_PORT(channel, rx_pin, tx_pin) "USART_" #channel,
-    .usart_ports = {"NONE", USART_PORTS},
-#undef USART_PORT
+    .motor_pins = motor_pin_strings,
+    .usart_ports = uart_port_strings,
 
     .gyro_id = 0x0,
 };

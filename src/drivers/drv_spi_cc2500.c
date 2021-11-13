@@ -8,14 +8,15 @@
 
 #if defined(STM32F4) && defined(USE_CC2500)
 
-#define PORT spi_port_defs[CC2500_SPI_PORT]
+#define DEVICE cc2500_device.spi
+#define PORT DEVICE.port
 
 uint8_t cc2500_read_gdo0() {
-  return gpio_pin_read(CC2500_GDO0_PIN);
+  return gpio_pin_read(cc2500_device.gdo0);
 }
 
 static void cc2500_hardware_init() {
-  spi_init_pins(CC2500_SPI_PORT, CC2500_NSS);
+  spi_init_pins(&DEVICE);
 
   LL_GPIO_InitTypeDef gpio_init;
   gpio_init.Mode = LL_GPIO_MODE_OUTPUT;
@@ -47,11 +48,11 @@ static void cc2500_hardware_init() {
   gpio_init.Speed = LL_GPIO_SPEED_FREQ_HIGH;
   gpio_init.OutputType = LL_GPIO_OUTPUT_OPENDRAIN;
   gpio_init.Pull = LL_GPIO_PULL_DOWN;
-  gpio_pin_init(&gpio_init, CC2500_GDO0_PIN);
+  gpio_pin_init(&gpio_init, cc2500_device.gdo0);
 
-  spi_enable_rcc(CC2500_SPI_PORT);
+  spi_enable_rcc(PORT);
 
-  LL_SPI_DeInit(PORT.channel);
+  LL_SPI_DeInit(PORT->channel);
   LL_SPI_InitTypeDef SPI_InitStructure;
   SPI_InitStructure.TransferDirection = LL_SPI_FULL_DUPLEX;
   SPI_InitStructure.Mode = LL_SPI_MODE_MASTER;
@@ -63,35 +64,35 @@ static void cc2500_hardware_init() {
   SPI_InitStructure.BitOrder = LL_SPI_MSB_FIRST;
   SPI_InitStructure.CRCCalculation = LL_SPI_CRCCALCULATION_DISABLE;
   SPI_InitStructure.CRCPoly = 7;
-  LL_SPI_Init(PORT.channel, &SPI_InitStructure);
-  LL_SPI_Enable(PORT.channel);
+  LL_SPI_Init(PORT->channel, &SPI_InitStructure);
+  LL_SPI_Enable(PORT->channel);
 
   // Dummy read to clear receive buffer
-  while (LL_SPI_IsActiveFlag_TXE(PORT.channel) == RESET)
+  while (LL_SPI_IsActiveFlag_TXE(PORT->channel) == RESET)
     ;
-  LL_SPI_ReceiveData8(PORT.channel);
+  LL_SPI_ReceiveData8(PORT->channel);
 
-  spi_dma_init(CC2500_SPI_PORT);
+  spi_dma_init(PORT);
 }
 
 void cc2500_strobe(uint8_t address) {
-  spi_csn_enable(CC2500_NSS);
-  spi_transfer_byte(CC2500_SPI_PORT, address);
-  spi_csn_disable(CC2500_NSS);
+  spi_csn_enable(&DEVICE);
+  spi_transfer_byte(PORT, address);
+  spi_csn_disable(&DEVICE);
 }
 
 uint8_t cc2500_get_status() {
-  spi_csn_enable(CC2500_NSS);
-  const uint8_t status = spi_transfer_byte(CC2500_SPI_PORT, 0xFF);
-  spi_csn_disable(CC2500_NSS);
+  spi_csn_enable(&DEVICE);
+  const uint8_t status = spi_transfer_byte(PORT, 0xFF);
+  spi_csn_disable(&DEVICE);
   return status;
 }
 
 uint8_t cc2500_write_reg(uint8_t reg, uint8_t data) {
-  spi_csn_enable(CC2500_NSS);
-  spi_transfer_byte(CC2500_SPI_PORT, reg | CC2500_WRITE_SINGLE);
-  const uint8_t ret = spi_transfer_byte(CC2500_SPI_PORT, data);
-  spi_csn_disable(CC2500_NSS);
+  spi_csn_enable(&DEVICE);
+  spi_transfer_byte(PORT, reg | CC2500_WRITE_SINGLE);
+  const uint8_t ret = spi_transfer_byte(PORT, data);
+  spi_csn_disable(&DEVICE);
   return ret;
 }
 
@@ -100,7 +101,7 @@ uint8_t cc2500_read_reg(uint8_t reg) {
 }
 
 static uint8_t cc2500_read_multi(uint8_t reg, uint8_t data, uint8_t *result, uint8_t len) {
-  spi_csn_enable(CC2500_NSS);
+  spi_csn_enable(&DEVICE);
 
   uint8_t buffer[len + 1];
   buffer[0] = reg;
@@ -108,18 +109,18 @@ static uint8_t cc2500_read_multi(uint8_t reg, uint8_t data, uint8_t *result, uin
     buffer[i + 1] = data;
   }
 
-  spi_dma_transfer_bytes(CC2500_SPI_PORT, buffer, len + 1);
+  spi_dma_transfer_bytes(PORT, buffer, len + 1);
   for (uint8_t i = 0; i < len; i++) {
     result[i] = buffer[i + 1];
   }
 
-  spi_csn_disable(CC2500_NSS);
+  spi_csn_disable(&DEVICE);
   return buffer[0];
 }
 
 /*
 static uint8_t cc2500_write_multi(uint8_t reg, uint8_t *data, uint8_t len) {
-  spi_csn_enable(CC2500_NSS);
+  spi_csn_enable(&DEVICE);
 
   uint8_t buffer[len + 1];
   buffer[0] = reg;
@@ -127,21 +128,21 @@ static uint8_t cc2500_write_multi(uint8_t reg, uint8_t *data, uint8_t len) {
     buffer[i + 1] = data[i];
   }
 
-  spi_dma_transfer_bytes(CC2500_SPI_PORT, buffer, len + 1);
-  spi_csn_disable(CC2500_NSS);
+  spi_dma_transfer_bytes(PORT, buffer, len + 1);
+  spi_csn_disable(&DEVICE);
   return buffer[0];
 }
 */
 
 static uint8_t cc2500_write_multi(uint8_t reg, uint8_t *data, uint8_t len) {
-  spi_csn_enable(CC2500_NSS);
+  spi_csn_enable(&DEVICE);
 
-  const uint8_t ret = spi_transfer_byte(CC2500_SPI_PORT, reg);
+  const uint8_t ret = spi_transfer_byte(PORT, reg);
   for (uint8_t i = 0; i < len; i++) {
-    spi_transfer_byte(CC2500_SPI_PORT, data[i]);
+    spi_transfer_byte(PORT, data[i]);
   }
 
-  spi_csn_disable(CC2500_NSS);
+  spi_csn_disable(&DEVICE);
   return ret;
 }
 

@@ -25,7 +25,6 @@
 #include <stm32f4xx_ll_tim.h>
 
 #include "control.h"
-#include "defines.h"
 #include "drv_gpio.h"
 #include "drv_motor.h"
 #include "drv_spi.h"
@@ -111,32 +110,29 @@ void make_packet(uint8_t number, uint16_t value, bool telemetry);
 #endif
 
 void motor_init() {
-  LL_GPIO_InitTypeDef gpio_init;
-  gpio_init.Mode = LL_GPIO_MODE_OUTPUT;
-  gpio_init.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  gpio_init.Pull = LL_GPIO_PULL_NO;
-  gpio_init.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+  LL_GPIO_InitTypeDef pin_init;
+  pin_init.Mode = LL_GPIO_MODE_OUTPUT;
+  pin_init.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  pin_init.Pull = LL_GPIO_PULL_NO;
+  pin_init.Speed = LL_GPIO_SPEED_FREQ_HIGH;
 
-#define MOTOR_PIN(port, pin, pin_af, timer, timer_channel) \
-  gpio_init.Pin = LL_GPIO_PIN_##pin;                       \
-  LL_GPIO_Init(GPIO##port, &gpio_init);                    \
-  if (GPIO##port == GPIOA) {                               \
-    DSHOT_GPIO_A = 1;                                      \
-    dshot_portA_low |= (LL_GPIO_PIN_##pin);                \
-    dshot_portA_high |= (LL_GPIO_PIN_##pin << 16);         \
-  } else if (GPIO##port == GPIOB) {                        \
-    DSHOT_GPIO_B = 1;                                      \
-    dshot_portB_low |= (LL_GPIO_PIN_##pin);                \
-    dshot_portB_high |= (LL_GPIO_PIN_##pin << 16);         \
-  } else if (GPIO##port == GPIOC) {                        \
-    DSHOT_GPIO_C = 1;                                      \
-    dshot_portC_low |= (LL_GPIO_PIN_##pin);                \
-    dshot_portC_high |= (LL_GPIO_PIN_##pin << 16);         \
+  for (size_t i = 0; i < MOTOR_PIN_MAX; i++) {
+    gpio_init(&pin_init, motor_pins[i]);
+
+    if (motor_pins[i]->port == GPIOA) {
+      DSHOT_GPIO_A = 1;
+      dshot_portA_low |= (motor_pins[i]->pin_mask);
+      dshot_portA_high |= (motor_pins[i]->pin_mask << 16);
+    } else if (motor_pins[i]->port == GPIOB) {
+      DSHOT_GPIO_B = 1;
+      dshot_portB_low |= (motor_pins[i]->pin_mask);
+      dshot_portB_high |= (motor_pins[i]->pin_mask << 16);
+    } else if (motor_pins[i]->port == GPIOC) {
+      DSHOT_GPIO_C = 1;
+      dshot_portC_low |= (motor_pins[i]->pin_mask);
+      dshot_portC_high |= (motor_pins[i]->pin_mask << 16);
+    }
   }
-
-  MOTOR_PINS
-
-#undef MOTOR_PIN
 
   for (int i = 0; i < 48; i = i + 3) {
     portA_buffer[i] = dshot_portA_low;
@@ -289,10 +285,10 @@ void dshot_dma_start() {
   uint32_t time = timer_micros();
 
   // wait maximum a LOOPTIME for dshot dma to complete
-  while ((dshot_dma_phase != 0 || spi_dma_is_ready(SPI_PORT1) == 0) && (timer_micros() - time) < state.looptime * 1e6f)
+  while ((dshot_dma_phase != 0 || spi_dma_is_ready(&spi_ports[0]) == 0) && (timer_micros() - time) < state.looptime * 1e6f)
     ;
 
-  if (dshot_dma_phase != 0 || spi_dma_is_ready(SPI_PORT1) == 0)
+  if (dshot_dma_phase != 0 || spi_dma_is_ready(&spi_ports[0]) == 0)
     return; // skip this dshot command
 
   // generate dshot dma packet
@@ -301,19 +297,16 @@ void dshot_dma_start() {
     motor_data_portB[i] = 0;
     motor_data_portC[i] = 0;
 
-#define MOTOR_PIN(port, pin, pin_af, timer, timer_channel)    \
-  if (!(dshot_packet[MOTOR_PIN_IDENT(port, pin)] & 0x8000)) { \
-    if (GPIO##port == GPIOA)                                  \
-      motor_data_portA[i] |= (LL_GPIO_PIN_##pin << 16);       \
-    else if (GPIO##port == GPIOB)                             \
-      motor_data_portB[i] |= (LL_GPIO_PIN_##pin << 16);       \
-    else if (GPIO##port == GPIOC)                             \
-      motor_data_portC[i] |= (LL_GPIO_PIN_##pin << 16);       \
-  }
-
-    MOTOR_PINS
-
-#undef MOTOR_PIN
+    for (size_t i = 0; i < MOTOR_PIN_MAX; i++) {
+      if (!(dshot_packet[i] & 0x8000)) {
+        if (motor_pins[i]->port == GPIOA)
+          motor_data_portA[i] |= (motor_pins[i]->pin_mask << 16);
+        else if (motor_pins[i]->port == GPIOB)
+          motor_data_portB[i] |= (motor_pins[i]->pin_mask << 16);
+        else if (motor_pins[i]->port == GPIOC)
+          motor_data_portC[i] |= (motor_pins[i]->pin_mask << 16);
+      }
+    }
 
     dshot_packet[0] <<= 1;
     dshot_packet[1] <<= 1;

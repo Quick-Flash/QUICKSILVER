@@ -1,0 +1,68 @@
+---
+name: aikon_f4
+
+spi_ports:
+  - index: 1
+    sck: PA5
+    miso: PA6
+    mosi: PA7
+  - index: 2
+    sck: PB13
+    miso: PB14
+    mosi: PB15
+  - index: 3
+    sck: PC10
+    miso: PC11
+    mosi: PC12
+
+uart_ports:
+  - index: 1
+    rx: PA10
+    tx: PA9
+    inverter: PC0
+  - index: 2
+    rx: PA3
+    tx: PA2
+  - index: 3
+    rx: PB11
+    tx: PB10
+  - index: 4
+    rx: PA1
+    tx: PA0
+
+leds:
+  - index: 1
+    pin: PB4
+    invert: true
+
+gyros:
+  - index: 1
+    type: ICM20602
+    interrupt: PC4
+    spi:
+      port: 1
+      nss: PA4
+    ids:
+      - 0x12
+      - 0xaf
+      - 0xac
+      - 0x98
+    orientation:
+      - 90_CW
+
+max7456:
+  spi:
+    port: 3
+    nss: PA15
+
+battery:
+  pin: PC2
+  divider_r1: 10000
+  divider_r2: 1000
+  ref_voltage: 3.3
+
+motor_pins:
+  - PC8
+  - PC9
+  - PC6
+  - PC7

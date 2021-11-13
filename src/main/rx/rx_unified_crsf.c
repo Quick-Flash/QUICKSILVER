@@ -119,7 +119,7 @@ static uint16_t crsf_rf_mode_fps[] = {
     200, // ELRS
 };
 
-#define USART usart_port_defs[serial_rx_port]
+#define USART uart_ports[serial_rx_port - 1]
 
 uint8_t crsf_crc8(uint8_t *data, uint16_t len) {
   uint8_t crc = 0;

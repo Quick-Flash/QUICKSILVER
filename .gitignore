@@ -5,6 +5,10 @@ Objects/
 Debug/
 Release/
 
+/src/target/target.c
+/src/target/target.h
+/.pio/modm-devices.cache
+
 compile_commands.json
 .vscode
 *.xml

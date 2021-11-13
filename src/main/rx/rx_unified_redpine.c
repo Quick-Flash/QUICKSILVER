@@ -38,7 +38,7 @@ extern uint8_t telemetry_offset;
 extern uint8_t telemetry_packet[14];
 extern uint8_t ready_for_next_telemetry;
 
-#define USART usart_port_defs[serial_rx_port]
+#define USART uart_ports[serial_rx_port - 1]
 
 uint16_t redpine_crc16(uint8_t *data, uint16_t len) {
   uint16_t crc = 0xFFFF;
@@ -101,7 +101,7 @@ void rx_serial_process_redpine() {
       state.rx.axis[i] *= 1.f / 820.f;
     }
     state.rx.axis[3] *= 1.f / 1640.f;
- 
+
     rx_apply_stick_calibration_scale();
 
     //Here we have the AUX channels Silverware supports

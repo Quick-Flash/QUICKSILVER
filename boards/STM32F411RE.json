@@ -34,5 +34,7 @@
     ]
   },
   "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32f411re.html",
-  "vendor": "Generic"
+  "vendor": "Generic",
+  "system": "stm32f4xx",
+  "device": "stm32f411ret6"
 }

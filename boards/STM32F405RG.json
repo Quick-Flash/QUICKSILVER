@@ -34,5 +34,7 @@
     ]
   },
   "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32f405rg.html",
-  "vendor": "Generic"
+  "vendor": "Generic",
+  "system": "stm32f4xx",
+  "device": "stm32f405rgt6"
 }

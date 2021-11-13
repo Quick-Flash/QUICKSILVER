@@ -2,6 +2,7 @@
 
 #include <cbor.h>
 
+#include "drv_serial.h"
 #include "filter.h"
 #include "project.h"
 #include "rx.h"
@@ -147,7 +148,7 @@ typedef enum {
   GYRO_ROTATE_90_CW = 0x4,
   GYRO_ROTATE_90_CCW = 0x8,
   GYRO_ROTATE_180 = 0x10,
-  GYRO_FLIP_180 = 0x20,
+  GYRO_ROTATE_FLIP = 0x20,
 } gyro_rotation_t;
 
 typedef enum {
@@ -163,7 +164,7 @@ typedef struct {
   uint8_t gyro_orientation;
   float torque_boost;
   float throttle_boost;
-  motor_pin_ident_t motor_pins[4];
+  enum motor_pin_names motor_pins[4];
   float turtle_throttle_percent;
 } profile_motor_t;
 
@@ -218,8 +219,8 @@ typedef struct {
   ARRAY_MEMBER(stick_calibration_limits, 4, profile_stick_calibration_limits_t)
 
 typedef struct {
-  usart_ports_t rx;
-  usart_ports_t smart_audio;
+  uart_port_names_t rx;
+  uart_port_names_t smart_audio;
 } profile_serial_t;
 
 #define SERIAL_MEMBERS \
@@ -300,20 +301,20 @@ typedef struct {
   uint32_t rx_protocol;
   uint32_t quic_protocol_version;
 
-  const char *motor_pins[MOTOR_PIN_IDENT_MAX];
-  const char *usart_ports[USART_PORTS_MAX];
+  const char **motor_pins;
+  const char **usart_ports;
 
   uint8_t gyro_id;
 } target_info_t;
 
-#define TARGET_INFO_MEMBERS                         \
-  STR_MEMBER(target_name)                           \
-  STR_MEMBER(git_version)                           \
-  MEMBER(features, uint32)                          \
-  MEMBER(rx_protocol, uint32)                       \
-  MEMBER(quic_protocol_version, uint32)             \
-  STR_ARRAY_MEMBER(motor_pins, MOTOR_PIN_IDENT_MAX) \
-  STR_ARRAY_MEMBER(usart_ports, USART_PORTS_MAX)    \
+#define TARGET_INFO_MEMBERS                    \
+  STR_MEMBER(target_name)                      \
+  STR_MEMBER(git_version)                      \
+  MEMBER(features, uint32)                     \
+  MEMBER(rx_protocol, uint32)                  \
+  MEMBER(quic_protocol_version, uint32)        \
+  STR_ARRAY_MEMBER(motor_pins, MOTOR_PIN_MAX)  \
+  STR_ARRAY_MEMBER(usart_ports, UART_PORT_MAX) \
   MEMBER(gyro_id, uint8)
 
 extern profile_t profile;

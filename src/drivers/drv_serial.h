@@ -1,7 +1,7 @@
 #pragma once
 
-#include "defines.h"
 #include "drv_gpio.h"
+#include "project.h"
 
 typedef enum {
   RX_SERIAL_PROTOCOL_INVALID,
@@ -21,23 +21,14 @@ typedef enum {
 //#define RX_SERIAL_PROTOCOL_MAX RX_SERIAL_PROTOCOL_CRSF
 #define RX_SERIAL_PROTOCOL_MAX RX_SERIAL_PROTOCOL_REDPINE_INVERTED
 
-typedef struct {
-  uint8_t channel_index;
-  USART_TypeDef *channel;
+typedef struct uart_port_def uart_port_def_t;
+typedef enum uart_port_names uart_port_names_t;
 
-  uint32_t gpio_af;
+extern uart_port_names_t serial_rx_port;
+extern uart_port_names_t serial_smart_audio_port;
 
-  gpio_pins_t rx_pin;
-  gpio_pins_t tx_pin;
-} usart_port_def_t;
-
-extern usart_port_def_t usart_port_defs[USART_PORTS_MAX];
-
-extern usart_ports_t serial_rx_port;
-extern usart_ports_t serial_smart_audio_port;
-
-void serial_enable_rcc(usart_ports_t port);
-void serial_enable_isr(usart_ports_t port);
+void serial_enable_rcc(const uart_port_def_t *port);
+void serial_enable_isr(const uart_port_def_t *port);
 
 void serial_debug_init(void);
 void serial_rx_init(rx_serial_protocol_t rx_serial_protocol);
