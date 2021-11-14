@@ -6,8 +6,6 @@
 
 #include "util/circular_buffer.h"
 
-#ifdef STM32F4
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -401,5 +399,3 @@ void usb_serial_printf(const char *fmt, ...) {
 
   usb_serial_print(str);
 }
-
-#endif

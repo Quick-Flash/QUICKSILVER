@@ -4,11 +4,19 @@
 
 void failloop(int val);
 
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32F7)
+// See "RM CoreSight Architecture Specification"
+// B2.3.10  "LSR and LAR, Software Lock Status Register and Software Lock Access Register"
+// "E1.2.11  LAR, Lock Access Register"
+#define DWT_LAR_UNLOCK_VALUE 0xC5ACCE55
+#endif
 
 void debug_timer_init() {
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+#if defined(STM32F7)
+  DWT->LAR = DWT_LAR_UNLOCK_VALUE;
+#endif
   DWT->CYCCNT = 0;
   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
@@ -29,7 +37,6 @@ static __INLINE uint32_t SysTick_Config2(uint32_t ticks) {
 }
 
 void timer_init() {
-#ifdef STM32F4
   SystemCoreClockUpdate();
 
   if (SysTick_Config2(SystemCoreClock / 100)) {
@@ -37,7 +44,9 @@ void timer_init() {
     while (1)
       ;
   }
-#endif
+
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
 
   debug_timer_init();
 }
@@ -79,8 +88,6 @@ uint32_t timer_millis() {
   last_millis = millis;
   return total_millis;
 }
-
-#endif
 
 void timer_delay_until(uint32_t uS) {
   while (timer_micros() < uS) {

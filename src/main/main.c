@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "blackbox.h"
 #include "buzzer.h"
 #include "control.h"
 #include "debug.h"
@@ -13,6 +14,7 @@
 #include "drv_serial.h"
 #include "drv_spi.h"
 #include "drv_time.h"
+#include "drv_usb.h"
 #include "filter.h"
 #include "flash.h"
 #include "gestures.h"
@@ -25,6 +27,7 @@
 #include "rgb_led.h"
 #include "rx.h"
 #include "sixaxis.h"
+#include "usb_configurator.h"
 #include "util.h"
 #include "vbat.h"
 #include "vtx.h"
@@ -32,12 +35,6 @@
 #ifdef USE_SERIAL_4WAY_BLHELI_INTERFACE
 #include "drv_serial_4way.h"
 #include "drv_serial_soft.h"
-#endif
-
-#ifdef STM32F4
-#include "blackbox.h"
-#include "drv_usb.h"
-#include "usb_configurator.h"
 #endif
 
 extern profile_t profile;
@@ -244,7 +241,6 @@ int main() {
     osd_display();
 #endif
 
-#ifdef STM32F4
     blackbox_update();
     if (usb_detect()) {
       flags.usb_active = 1;
@@ -258,7 +254,6 @@ int main() {
       extern usb_motor_test_t usb_motor_test;
       usb_motor_test.active = 0;
     }
-#endif
 
     state.cpu_load = (timer_micros() - lastlooptime);
     //one last check to make sure we catch any looptime problems and rerun autodetect live
@@ -346,7 +341,7 @@ void failloop(int val) {
   }
 
   while (1) {
-#if defined(STM32F4) && defined(DEBUG)
+#if defined(DEBUG)
     quic_debugf("failloop %s (%d)", failloop_string(val), val);
     usb_detect();
 #endif
@@ -361,8 +356,8 @@ void failloop(int val) {
 }
 
 void handle_fault() {
-#if defined(STM32F4) && defined(RESET_ON_FAULT)
-  extern void systemResetToBootloader();
+#if defined(RESET_ON_FAULT)
+  extern void systemResetToBootloader(void);
   systemResetToBootloader();
 #endif
 

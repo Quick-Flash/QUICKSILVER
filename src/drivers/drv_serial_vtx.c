@@ -1,7 +1,5 @@
 #include "drv_serial_vtx.h"
 
-#include <stm32f4xx_ll_usart.h>
-
 #include "drv_serial.h"
 #include "drv_time.h"
 #include "util/circular_buffer.h"
@@ -34,7 +32,7 @@ void serial_vtx_send_data(uint8_t *data, uint32_t size) {
 
   vtx_transfer_done = 0;
 
-  LL_USART_ClearFlag_RXNE(USART.channel);
+  //LL_USART_ClearFlag_RXNE(USART.channel);
   LL_USART_ClearFlag_TC(USART.channel);
 
   vtx_frame_offset = 0;
@@ -74,7 +72,7 @@ void vtx_uart_isr() {
 
   if (LL_USART_IsActiveFlag_RXNE(USART.channel)) {
     const uint8_t data = LL_USART_ReceiveData8(USART.channel);
-    LL_USART_ClearFlag_RXNE(USART.channel);
+    //LL_USART_ClearFlag_RXNE(USART.channel);
     circular_buffer_write(&vtx_rx_buffer, data);
   }
 

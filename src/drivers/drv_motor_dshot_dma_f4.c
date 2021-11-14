@@ -20,10 +20,6 @@
 
 #include <stdbool.h>
 
-#include <stm32f4xx_ll_bus.h>
-#include <stm32f4xx_ll_dma.h>
-#include <stm32f4xx_ll_tim.h>
-
 #include "control.h"
 #include "drv_gpio.h"
 #include "drv_motor.h"
@@ -33,7 +29,8 @@
 #include "project.h"
 #include "util.h"
 
-#ifdef STM32F4
+#if defined(STM32F4) || defined(STM32F7)
+
 typedef struct {
   __IO uint32_t MODER;   /*!< GPIO port mode register,               Address offset: 0x00      */
   __IO uint32_t OTYPER;  /*!< GPIO port output type register,        Address offset: 0x04      */
