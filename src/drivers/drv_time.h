@@ -8,4 +8,5 @@ uint32_t timer_micros();
 uint32_t timer_millis();
 
 void timer_delay_us(uint32_t us);
+void timer_delay_ms(uint32_t ms);
 void timer_delay_until(uint32_t us);

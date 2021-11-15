@@ -74,6 +74,11 @@ uint32_t timer_micros() {
   return total_micros;
 }
 
+void timer_delay_ms(uint32_t ms) {
+  while (ms--)
+    timer_delay_us(1000);
+}
+
 uint32_t timer_millis() {
   static uint32_t total_millis = 0;
   static uint32_t last_millis = 0;
