@@ -280,15 +280,21 @@ void make_packet(uint8_t number, uint16_t value, bool telemetry) {
   dshot_packet[number] = (packet << 4) | csum;
 }
 
+#ifdef STM32F4
+#define DMA_WAIT_CONDITION (dshot_dma_phase != 0 || spi_dma_is_ready(SPI_PORT1) == 0)
+#else
+#define DMA_WAIT_CONDITION (dshot_dma_phase != 0)
+#endif
+
 // make dshot dma packet, then fire
 void dshot_dma_start() {
   uint32_t time = timer_micros();
 
   // wait maximum a LOOPTIME for dshot dma to complete
-  while ((dshot_dma_phase != 0 || spi_dma_is_ready(SPI_PORT1) == 0) && (timer_micros() - time) < state.looptime * 1e6f)
+  while (DMA_WAIT_CONDITION && (timer_micros() - time) < state.looptime * 1e6f)
     ;
 
-  if (dshot_dma_phase != 0 || spi_dma_is_ready(SPI_PORT1) == 0)
+  if (DMA_WAIT_CONDITION)
     return; // skip this dshot command
 
   // generate dshot dma packet

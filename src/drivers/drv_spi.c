@@ -281,7 +281,7 @@ uint8_t spi_dma_is_ready(spi_ports_t port) {
 }
 
 void spi_dma_wait_for_ready(spi_ports_t port) {
-#ifdef BRUSHLESS_TARGET
+#if defined(BRUSHLESS_TARGET) && defined(STM32F4)
   if (port == SPI_PORT1) {
     extern volatile int dshot_dma_phase;
     while (dshot_dma_phase != 0)
